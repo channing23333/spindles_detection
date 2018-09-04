@@ -46,25 +46,31 @@ D_conb1 = tf.Variable(tf.zeros(shape=[40]))
 D_filter2= tf.Variable(xavier_init([4,40,40]))
 D_conb2 = tf.Variable(tf.zeros(shape=[40]))
 
+
+
 theta_D = [D_W1, D_W2, D_b1, D_b2, D_filter1,D_conb1,D_filter2,D_conb2]
 
 #生成模型的输入和参数初始化
 Z = tf.placeholder(tf.float32, shape=[None, 100])
+G_W1 = tf.Variable(xavier_init([100, 140]))
+G_b1 = tf.Variable(tf.zeros(shape=[140]))
 
-G_filter1=tf.Variable(xavier_init([20,1,20]))
-G_conb1=tf.Variable(tf.zeros(shape=[1]))
+G_filter1=tf.Variable(xavier_init([20,20,1]))
+G_conb1=tf.Variable(tf.zeros(shape=[20]))
 
-G_filter2=tf.Variable(xavier_init([4,20,20]))
+G_filter2=tf.Variable(xavier_init([20,20,20]))
 G_conb2=tf.Variable(tf.zeros(shape=[20]))
 
-G_W1 = tf.Variable(xavier_init([100,512]))
-G_b1 = tf.Variable(tf.zeros(shape=[512]))
+G_filter3=tf.Variable(xavier_init([20,20,20]))
+G_conb3=tf.Variable(tf.zeros(shape=[20]))
 
-G_W2 = tf.Variable(xavier_init([512, 3560]))
-G_b2 = tf.Variable(tf.zeros(shape=[3560]))
-G_W3 = tf.Variable(xavier_init([200,200]))
-G_b3 = tf.Variable(tf.zeros(shape=[200]))
-theta_G = [G_W1, G_W2, G_b1, G_b2,G_filter1,G_conb1,G_filter2,G_conb2,G_W3,G_b3]
+G_filter4=tf.Variable(xavier_init([4,1,20]))
+G_conb4=tf.Variable(tf.zeros(shape=[1]))
+
+G_a=tf.Variable(tf.zeros(shape=[1]))
+
+
+theta_G = [G_filter1,G_conb1,G_filter2,G_conb2,G_filter3,G_conb3,G_filter4,G_conb4,G_W1,G_b1,G_a]
 
 #随机噪声采样函数
 def sample_Z(m,n):
@@ -73,13 +79,13 @@ def sample_Z(m,n):
 def generator(z):
     t=tf.shape(z)
     p=t[0]
-    G_h1 = tf.matmul(z, G_W1) + G_b1
-    G_h2 = tf.matmul(G_h1, G_W2) + G_b2
-    x=tf.reshape(G_h2,[-1,178,20])
-    x1=tf.contrib.nn.conv1d_transpose(x, G_filter2,[p,181,20], 1, 'VALID')+G_conb2
-    y=tf.sinh(tf.contrib.nn.conv1d_transpose(x1, G_filter1,[p,200,1], 1, 'VALID')+G_conb1)
-    G_h3=tf.reshape(y,[p,200])
-    G_h5= tf.matmul(G_h3, G_W3) + G_b3
+    x0=tf.matmul(z, G_W1) + G_b1
+    x=tf.reshape(x0,[-1,140,1])
+    x1=tf.contrib.nn.conv1d_transpose(x, G_filter1,[p,159,20], 1, 'VALID')+G_conb1
+    x2=tf.contrib.nn.conv1d_transpose(x1, G_filter2,[p,178,20], 1, 'VALID')+G_conb2
+    x3=tf.contrib.nn.conv1d_transpose(x2, G_filter3,[p,197,20], 1, 'VALID')+G_conb3
+    y=tf.contrib.nn.conv1d_transpose(x3, G_filter4,[p,200,1], 1, 'VALID')+G_conb4
+    G_h3=tf.multiply(G_a,tf.reshape(y,[p,200]))
     G_prob=G_h3
     return G_prob
 #判别模型
@@ -161,3 +167,6 @@ with open('generated_spindle.txt','w') as f1:
         for kkk in range(random_number):
             outfile.append(0)
     f1.write(str(outfile))
+
+
+
